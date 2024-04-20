@@ -60,18 +60,17 @@ async def main(session, ad_number, webhook_url):
         await asyncio.sleep(1)
 
 async def run():
-  async with aiohttp.ClientSession() as session:
-      tasks = []
-      ad_names = ["banner", "skyscraper", "square"]
-      for ad_name in ad_names:
-          ad_type = {"banner": 1, "skyscraper": 2, "square": 3}.get(ad_name)
-          if ad_type is not None:
-              webhook_url = os.environ.get(ad_name)
-              if webhook_url:
-                  tasks.append(main(session, ad_type, webhook_url))
-              else:
-                  Logger.error(f"Webhook URL for {ad_name} not found in environment variables")
-      await asyncio.gather(*tasks)
+    async with aiohttp.ClientSession() as session:
+        tasks = []
+        with open("config.json") as config_file:
+            config = json.load(config_file)
+            for ad_name, webhook_url in config.items():
+                ad_type = {"banner": 1, "skyscraper": 2, "square": 3}.get(ad_name)
+                if ad_type is not None:
+                    tasks.append(main(session, ad_type, webhook_url))
+                else:
+                    Logger.error(f"Invalid ad type: {ad_name}")
+        await asyncio.gather(*tasks)
 
 async def setup():
   await run()
